@@ -40,4 +40,11 @@ app.get('/signup', function (req, res){
     res.send('Hello World from signup')
 })
 
+
+app.get('/contact', function (req, res){
+    res.cookie('test', hassan);
+    res.send('Hello World from contact us page')
+})
+
+
 app.listen(3000);

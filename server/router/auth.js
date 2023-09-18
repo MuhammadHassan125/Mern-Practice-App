@@ -1,4 +1,6 @@
 const express = require('express');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken')
 
 const router = express.Router();
 require('../db/connect');
@@ -9,7 +11,7 @@ router.get('/', (req, res) => {
     res.send('Hello World from the router js')
 })
 
-router.post('/register', (req, res) => {
+router.post('/register', async (req, res) => {
 
     const { name, email, work, phone, password, cpassword } = req.body;
 
@@ -18,13 +20,13 @@ router.post('/register', (req, res) => {
     }
 
     User.findOne({ email: email })
-        .then((userexist) => {
+        .then(async (userexist) => {
             if (userexist) {
-                return res.json({ error: "this email is already exist" });
+                return res.json({ error });
             }
 
             const user = new User({ name, email, work, password, cpassword, phone })
-            user.save().then(() => {
+            await user.save().then(() => {
                 return res.json({ message: "User registered successfully" });
             }).catch((error) => {
                 return res.json({ error });
@@ -41,19 +43,34 @@ router.post('/register', (req, res) => {
 router.post('/signin', async (req, res) => {
 
     try {
+        let token
         const { email, password } = req.body;
 
         if (!email || !password) {
             return res.status(402).json({ error: "Please filled the required field" })
         }
 
-       const LoginFunction = await User.findOne({email: email})
-       console.log(LoginFunction)
+       const LoginFunction = await User.findOne({email: email});
 
-       if(!LoginFunction){
-            res.status(402).json({error:"Didn't match"})
+     token = await LoginFunction.generateAuthToken();
+     console.log(token);
+
+       if(LoginFunction){
+            // res.status(402).json({error:"Didn't match"})
+
+            const isMatch = await bcrypt.compare(password, LoginFunction.password)
+            if(!isMatch){
+                res.send({error:"User error"});
+            }else{
+                res.send({message:"Huury! User is Login Successfully"});
+            }
+
+            res.cookie('test', hassan, {
+                httpOnly: true
+            })
+
        }else{
-           res.json({message: "User login successfully"})
+           res.json({message: "OOp's Something gone wrong"})
        }
 
     } catch (error) {
